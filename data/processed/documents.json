@@ -1,0 +1,56 @@
+[
+  {
+    "doc_id": "HR-POL-US-021",
+    "version": "v1.0",
+    "region": "US",
+    "effective_date": "January 1, 2024",
+    "title": "US Health Insurance Benefits Summary",
+    "source_file": "health_insurance_benefits_us_2024.md",
+    "text": "# US Health Insurance Benefits Summary\n**Region:** United States\n**Effective Date:** January 1, 2024\n**Document ID:** HR-POL-US-021\n\n## Plan Options\n- PPO Gold Plan: $150/month employee premium, $500 individual deductible.\n- PPO Silver Plan: $90/month employee premium, $1,500 individual deductible.\n- HDHP + HSA Plan: $40/month employee premium, $3,200 individual deductible,\n  Company contributes $1,000/year to employee HSA.\n\n## Eligibility\nFull-time employees (30+ hours/week) are eligible from day 1 of employment.\nPart-time employees are not eligible for Company-subsidized health plans.\n\n## Dependent Coverage\nSpouses, domestic partners, and dependent children up to age 26 may be\nadded during open enrollment or within 30 days of a qualifying life event\n(marriage, birth, adoption, loss of other coverage).\n\n## Open Enrollment\nHeld annually in November for coverage effective January 1. Changes outside\nopen enrollment require a qualifying life event and must be reported to\nHR within 30 days of the event.\n\n## Contact\nBenefits Team - hr-benefits@company.com | 1-800-555-0142\n"
+  },
+  {
+    "doc_id": "HR-POL-EU-014",
+    "version": "v1.0",
+    "region": "EU",
+    "effective_date": "January 1, 2022",
+    "title": "EU Parental Leave Policy",
+    "source_file": "parental_leave_policy_eu_2022.md",
+    "text": "# EU Parental Leave Policy\n**Region:** European Union (Germany, France, Netherlands offices)\n**Effective Date:** January 1, 2022\n**Document ID:** HR-POL-EU-014\n\n## Overview\nThis policy applies to all full-time employees based in EU member-state\noffices, in addition to statutory parental leave entitlements provided by\nlocal law, whichever is more generous to the employee.\n\n## Eligibility\nAll full-time employees are eligible from their first day of employment,\nconsistent with EU Directive 2019/1158 on work-life balance for parents.\n\n## Leave Entitlement\n- Birthing parent: 16 weeks fully paid leave, plus any additional statutory\n  maternity leave required by local law.\n- Non-birthing parent / secondary caregiver: 10 weeks fully paid leave.\n- Leave may be taken within 12 months of the qualifying event, or as\n  otherwise permitted by local statutory law.\n\n## Pay During Leave\n100% of base salary, coordinated with statutory maternity/parental pay\nschemes to avoid double payment.\n\n## How to Apply\nSubmit local country HR leave form (see country-specific intranet page)\nat least 60 days before the anticipated start date, in accordance with\nlocal statutory notice requirements.\n\n## Contact\nEU HR Benefits Team - hr-benefits-eu@company.com\n"
+  },
+  {
+    "doc_id": "HR-POL-US-014",
+    "version": "v1.0",
+    "region": "US",
+    "effective_date": "January 1, 2021",
+    "title": "US Parental Leave Policy",
+    "source_file": "parental_leave_policy_us_2021.md",
+    "text": "# US Parental Leave Policy\n**Region:** United States\n**Effective Date:** January 1, 2021\n**Document ID:** HR-POL-US-014 (v1.0)\n\n## Overview\nThis policy applies to all full-time employees based in the United States.\n\n## Eligibility\nEmployees must have completed at least 90 days of continuous employment prior\nto the expected date of birth, adoption, or foster placement.\n\n## Leave Entitlement\n- Birthing parent: 8 weeks of fully paid leave.\n- Non-birthing parent / secondary caregiver: 4 weeks of fully paid leave.\n- Leave must be taken within 6 months of the qualifying event.\n\n## Pay During Leave\n100% of base salary is paid during the leave period through the Company's\nshort-term disability and parental leave benefit program. Leave does not\ncount against the employee's standard PTO balance.\n\n## How to Apply\nSubmit Form HR-014 to your manager and to hr-leaves@company.com at least\n30 days before the anticipated start date (or as soon as practicable for\nunplanned events such as premature birth).\n\n## Contact\nHR Benefits Team - hr-benefits@company.com\n"
+  },
+  {
+    "doc_id": "HR-POL-US-014",
+    "version": "v2.0",
+    "region": "US",
+    "effective_date": "March 1, 2023",
+    "title": "US Parental Leave Policy - 2023 Amendment",
+    "source_file": "parental_leave_policy_us_2023_amendment.md",
+    "text": "# US Parental Leave Policy - 2023 Amendment\n**Region:** United States\n**Effective Date:** March 1, 2023\n**Document ID:** HR-POL-US-014 (v2.0) - SUPERSEDES v1.0\n\n## Summary of Changes\nEffective March 1, 2023, the Company has expanded parental leave benefits\nfor all US-based full-time employees. This amendment supersedes and replaces\nthe parental leave terms described in HR-POL-US-014 (v1.0, dated Jan 1, 2021)\nin their entirety.\n\n## Eligibility\nEmployees must have completed at least 60 days of continuous employment\n(reduced from 90 days) prior to the qualifying event.\n\n## Leave Entitlement\n- Birthing parent: 12 weeks of fully paid leave (increased from 8 weeks).\n- Non-birthing parent / secondary caregiver: 8 weeks of fully paid leave\n  (increased from 4 weeks).\n- Leave must be taken within 12 months of the qualifying event (increased\n  from 6 months).\n\n## Pay During Leave\n100% of base salary, unchanged from prior policy. Leave does not count\nagainst standard PTO balance.\n\n## How to Apply\nSame process as before: submit Form HR-014 to your manager and to\nhr-leaves@company.com at least 30 days before the anticipated start date.\n\n## Contact\nHR Benefits Team - hr-benefits@company.com\n"
+  },
+  {
+    "doc_id": "HR-POL-US-007",
+    "version": "v1.0",
+    "region": "US",
+    "effective_date": "January 1, 2024",
+    "title": "US Paid Time Off (PTO) Policy",
+    "source_file": "pto_policy_us_2024.md",
+    "text": "# US Paid Time Off (PTO) Policy\n**Region:** United States\n**Effective Date:** January 1, 2024\n**Document ID:** HR-POL-US-007\n\n## Overview\nApplies to all full-time, non-union US employees.\n\n## Accrual\n- Years 0-2 of service: 15 PTO days/year, accrued at 1.25 days/month.\n- Years 3-5 of service: 20 PTO days/year, accrued at 1.67 days/month.\n- Years 6+ of service: 25 PTO days/year, accrued at 2.08 days/month.\n\n## Carryover\nUp to 5 unused PTO days may be carried over into the next calendar year.\nAny balance above 5 days is forfeited on December 31, unless local state\nlaw requires otherwise (e.g., California does not permit \"use-it-or-lose-it\"\npolicies; unused PTO carries over in full for CA-based employees).\n\n## Requesting PTO\nSubmit requests through the WorkdayHR portal at least 5 business days in\nadvance for planned absences. Manager approval is required.\n\n## Payout on Termination\nUnused, accrued PTO is paid out at the employee's final base rate upon\ntermination, in accordance with state law.\n\n## Contact\nHR Benefits Team - hr-benefits@company.com\n"
+  },
+  {
+    "doc_id": "HR-POL-GLOBAL-030",
+    "version": "v1.0",
+    "region": "Global",
+    "effective_date": "June 1, 2023",
+    "title": "Global Remote & Hybrid Work Policy",
+    "source_file": "remote_work_policy_global_2023.md",
+    "text": "# Global Remote & Hybrid Work Policy\n**Region:** Global (all offices)\n**Effective Date:** June 1, 2023\n**Document ID:** HR-POL-GLOBAL-030\n\n## Work Arrangements\n- **Hybrid** (default): Minimum 3 days/week in the assigned office.\n- **Full Remote**: Requires Director-level approval and is only available\n  for roles explicitly designated \"remote-eligible\" by the role's job code.\n- **Full-Time Office**: Required for roles that handle physical records,\n  regulated healthcare data on-site, or lab/clinical work.\n\n## Equipment\nCompany provides a laptop, monitor, and a one-time $300 home-office stipend\nfor approved full-remote employees. Hybrid employees are not eligible for\nthe home-office stipend.\n\n## Cross-Border Remote Work\nEmployees may not work remotely from a country other than their country of\nemployment for more than 20 consecutive business days without prior approval\nfrom HR and Legal, due to tax and labor law implications.\n\n## Review Cadence\nManager and employee review the work arrangement every 6 months.\n\n## Contact\nWorkplace Experience Team - workplace@company.com\n"
+  }
+]
