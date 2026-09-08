@@ -1,0 +1,23 @@
+# --- Core RAG pipeline dependencies ---
+
+# TF-IDF vectorization + sparse cosine similarity for our from-scratch vector store.
+# Fully offline - no model download required (works around corporate network blocks
+# on Hugging Face / Ollama registries).
+scikit-learn>=1.5,<2.0
+scipy>=1.13,<2.0
+
+# OpenAI-compatible client, used to call GitHub Models for generation
+openai>=1.50.0
+
+# Document parsing
+pypdf==5.1.0
+python-docx==1.1.2
+
+# Structured output validation (for the {answer, citation, confidence,...} schema)
+pydantic==2.10.3
+
+# Env var loading (.env file for config)
+python-dotenv==1.0.1
+
+# Nicer CLI output (tables, colors) for our scripts
+rich==13.9.4

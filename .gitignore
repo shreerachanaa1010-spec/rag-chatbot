@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Env secrets
+.env
+
+# Vector index persisted data (regenerated from data/raw via scripts)
+data/vector_index/
+
+# OS
+.DS_Store
+Thumbs.db
