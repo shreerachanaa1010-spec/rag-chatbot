@@ -11,6 +11,7 @@ langchain-text-splitters>=1.0,<2.0
 langchain-huggingface>=1.0,<2.0
 langgraph>=1.0,<2.0
 faiss-cpu>=1.9,<2.0
+rank-bm25>=0.2,<1.0
 
 # OpenAI-compatible client, used to call Gemini's compatible endpoint
 openai>=1.50.0
@@ -31,3 +32,6 @@ rich==13.9.4
 # HTTP backend and local static frontend serving
 fastapi>=0.115,<1.0
 uvicorn[standard]>=0.32,<1.0
+
+# Automated evaluation tests
+pytest>=8.0,<9.0

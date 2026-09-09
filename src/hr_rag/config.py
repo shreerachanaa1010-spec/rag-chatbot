@@ -39,6 +39,10 @@ EMBEDDING_MODEL = os.getenv(
 	"EMBEDDING_MODEL",
 	"sentence-transformers/all-MiniLM-L6-v2",
 )
+RERANKER_MODEL = os.getenv(
+	"RERANKER_MODEL",
+	"cross-encoder/ms-marco-MiniLM-L-6-v2",
+)
 
 # --- Chunking --------------------------------------------------------------
 # Measured in characters. ~800 chars is roughly 150-200 tokens, small enough

@@ -55,6 +55,7 @@ This is a controlled workflow rather than an open-ended tool-calling agent.
 |-----------------------|----------------------------------|-----|
 | LLM (generation)      | [Google Gemini](https://ai.google.dev/gemini-api/docs/openai) via its OpenAI-compatible endpoint | Use a Gemini API key with the existing OpenAI SDK |
 | Embeddings            | Hugging Face Sentence Transformers (`all-MiniLM-L6-v2`) | Semantic retrieval with normalized dense vectors; downloaded once and run locally |
+| Reranking             | Sentence Transformers CrossEncoder (`ms-marco-MiniLM-L-6-v2`) | Reorders FAISS/BM25 candidates using question-to-chunk relevance |
 | Vector store          | FAISS through LangChain (`vectorstore.py`) | Fast local nearest-neighbor search with metadata payloads |
 | Doc parsing           | LangChain loaders (`PyPDFLoader`, `Docx2txtLoader`, `TextLoader`) | Consistent document ingestion across source formats |
 | Workflow              | LangGraph | Explicit retrieval, version selection, and HR-review routing |
@@ -118,11 +119,13 @@ rag-chatbot/
       recall on retrieval, manual grading of answer groundedness.
 - [x] **Step 10** — FastAPI backend and React/Vite browser UI over the FAISS index.
 - [x] **Step 11** — LangChain ingestion/retrieval and LangGraph HR-review workflow.
-- [ ] **Step 12** — Evaluation set, hybrid BM25 retrieval, reranking, and persistent HR feedback.
+- [ ] **Step 12** — Evaluation set and persistent HR feedback.
+- [x] **Step 12a** — Hybrid FAISS semantic + BM25 keyword retrieval.
+- [x] **Step 12b** — Local CrossEncoder reranking over FAISS/BM25 candidates.
 
 ## Sample data (already created)
 
-`data/raw/` contains 6 realistic HR documents, including a deliberate conflict:
+`data/raw/` contains 10 realistic HR documents, including a deliberate conflict:
 
   - `parental_leave_policy_us_2021.md` (v1.0, archived) **and**
   `parental_leave_policy_us_2023_amendment.md` (v2.0, supersedes v1.0) — same `doc_id`
@@ -130,7 +133,11 @@ rag-chatbot/
 - `parental_leave_policy_eu_2022.md` — different region, different rules (not a conflict, a
   legitimate regional difference — tests region-aware retrieval).
 - `pto_policy_us_2024.md`, `health_insurance_benefits_us_2024.md`,
-  `remote_work_policy_global_2023.md` — additional realistic policy documents.
+  `remote_work_policy_global_2023.md` — benefits, absence, and work-arrangement policies.
+- `compensation_policy_us_2025.md` — salary bands, merit review, promotions, bonuses, and payroll.
+- `performance_management_global_2025.md` — goals, check-ins, annual reviews, and PIPs.
+- `employee_conduct_global_2025.md` — conduct standards, reporting, investigations, and non-retaliation.
+- `career_development_global_2025.md` — development plans, learning budget, mentoring, and mobility.
 
 ## Setup
 
@@ -156,8 +163,9 @@ python scripts/01_ingest.py
 python scripts/02_build_index.py
 ```
 
-The first index build downloads the configured Hugging Face embedding model. The generated
-FAISS files are written to `data/vector_index/policy_faiss/` and are ignored by Git.
+The first index build downloads the configured Hugging Face embedding model. The first query
+also downloads the CrossEncoder reranker model. Generated FAISS files are written to
+`data/vector_index/policy_faiss/` and are ignored by Git.
 
 Start the FastAPI backend from the project root:
 

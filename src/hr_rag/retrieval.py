@@ -15,14 +15,34 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import date, datetime
+from functools import lru_cache
 
-from hr_rag.config import TOP_K
+from sentence_transformers import CrossEncoder
+
+from hr_rag.config import RERANKER_MODEL, TOP_K
 from hr_rag.schemas import RetrievedChunk
 from hr_rag.vectorstore import query as vector_query
 
 
+@lru_cache(maxsize=1)
+def _reranker() -> CrossEncoder:
+    return CrossEncoder(RERANKER_MODEL)
+
+
+def _rerank(question: str, candidates: list[RetrievedChunk], top_k: int) -> list[RetrievedChunk]:
+    if not candidates:
+        return []
+    scores = _reranker().predict([(question, item.chunk.text) for item in candidates])
+    ranked = sorted(zip(scores, candidates), key=lambda item: float(item[0]), reverse=True)
+    return [item for _, item in ranked[:top_k]]
+
+
 def retrieve(question: str, region: str | None = None, top_k: int = TOP_K) -> list[RetrievedChunk]:
-    retrieved = vector_query(question, top_k=top_k, region=region)
+    retrieved = _rerank(
+        question,
+        vector_query(question, top_k=max(top_k * 3, 10), region=region),
+        top_k,
+    )
     latest_dates: dict[str, date] = {}
     for item in retrieved:
         effective_date = _parse_effective_date(item.chunk.effective_date)

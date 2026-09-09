@@ -28,6 +28,7 @@ from pathlib import Path
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
+from rank_bm25 import BM25Okapi
 
 from hr_rag.config import EMBEDDING_MODEL, MAX_DISTANCE, TOP_K, VECTOR_INDEX_DIR
 from hr_rag.schemas import Chunk, RetrievedChunk
@@ -88,14 +89,42 @@ def query(question: str, top_k: int = TOP_K, region: str | None = None) -> list[
         filter=metadata_filter,
         fetch_k=max(top_k * 4, 20),
     )
-    retrieved: list[RetrievedChunk] = []
-    for document, distance in matches:
-        if float(distance) > MAX_DISTANCE:
-            continue
-        retrieved.append(
-            RetrievedChunk(
-                chunk=Chunk(**document.metadata),
-                distance=float(distance),
-            )
+    documents = [
+        document
+        for document in store.docstore._dict.values()
+        if not region or document.metadata.get("region") in (region, "Global")
+    ]
+    if not documents:
+        return []
+
+    tokenize = lambda text: text.lower().split()
+    bm25 = BM25Okapi([tokenize(document.page_content) for document in documents])
+    keyword_scores = bm25.get_scores(tokenize(question))
+    max_keyword_score = max(keyword_scores, default=0.0)
+    keyword_by_id = {
+        document.metadata["chunk_id"]: (
+            float(keyword_scores[index] / max_keyword_score)
+            if max_keyword_score > 0
+            else 0.0
         )
-    return retrieved
+        for index, document in enumerate(documents)
+    }
+
+    candidates = []
+    for document, distance in matches:
+        distance = float(distance)
+        if distance > MAX_DISTANCE:
+            continue
+        semantic_score = 1.0 / (1.0 + distance)
+        keyword_score = keyword_by_id.get(document.metadata["chunk_id"], 0.0)
+        hybrid_score = 0.7 * semantic_score + 0.3 * keyword_score
+        candidates.append((hybrid_score, document))
+
+    candidates.sort(key=lambda item: item[0], reverse=True)
+    return [
+        RetrievedChunk(
+            chunk=Chunk(**document.metadata),
+            distance=float(1.0 - score),
+        )
+        for score, document in candidates[:top_k]
+    ]
