@@ -1,6 +1,6 @@
 """
 Step 4c runner: load data/processed/chunks.json (produced by 01_ingest.py)
-and fit + index a TF-IDF vector store from every chunk.
+and build a semantic vector index from every chunk.
 
 Usage:
     python scripts/02_build_index.py
@@ -29,11 +29,11 @@ def main() -> None:
     raw_chunks = json.loads(chunks_path.read_text(encoding="utf-8"))
     chunks = [Chunk(**c) for c in raw_chunks]
 
-    console.print(f"[bold]Fitting TF-IDF vectorizer and indexing {len(chunks)} chunks...[/bold]")
+    console.print(f"[bold]Embedding and indexing {len(chunks)} chunks...[/bold]")
 
     index_chunks(chunks)
 
-    console.print(f"[green]Done. Vector index persisted to data/vector_index/.[/green]")
+    console.print(f"[green]Done. FAISS index persisted to data/vector_index/policy_faiss/.[/green]")
 
 
 if __name__ == "__main__":

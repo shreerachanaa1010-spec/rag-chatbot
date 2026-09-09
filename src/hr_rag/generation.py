@@ -1,7 +1,7 @@
 """
 Step 7: Generation.
 
-Builds a grounded prompt from retrieved chunks and calls GitHub Models
+Builds a grounded prompt from retrieved chunks and calls Gemini
 (via its OpenAI-compatible endpoint, so we can use the standard `openai`
 SDK), forcing JSON-mode output so the response can be parsed directly into
 our DecisionOutput schema (see schemas.py) without brittle text parsing.
@@ -12,10 +12,8 @@ import json
 
 from openai import OpenAI
 
-from hr_rag.config import GITHUB_MODELS_BASE_URL, GITHUB_MODELS_MODEL, GITHUB_MODELS_TOKEN
+from hr_rag.config import GEMINI_API_KEY, GEMINI_BASE_URL, GEMINI_MODEL
 from hr_rag.schemas import RetrievedChunk
-
-_client = OpenAI(api_key=GITHUB_MODELS_TOKEN, base_url=GITHUB_MODELS_BASE_URL)
 
 SYSTEM_PROMPT = """You are an HR policy assistant answering employee questions using ONLY the \
 policy excerpts provided in the user message. Never use outside knowledge.
@@ -57,11 +55,15 @@ def _format_context(chunks: list[RetrievedChunk]) -> str:
 
 def generate_decision(question: str, retrieved: list[RetrievedChunk]) -> dict:
     """Call the LLM and return the parsed raw JSON dict (pre-validation)."""
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY is not configured")
+
+    client = OpenAI(api_key=GEMINI_API_KEY, base_url=GEMINI_BASE_URL)
     context = _format_context(retrieved)
     user_prompt = f"Employee question: {question}\n\nPolicy excerpts:\n{context}"
 
-    response = _client.chat.completions.create(
-        model=GITHUB_MODELS_MODEL,
+    response = client.chat.completions.create(
+        model=GEMINI_MODEL,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},

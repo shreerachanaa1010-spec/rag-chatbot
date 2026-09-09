@@ -1,4 +1,4 @@
-# HR Policy & Benefits Resolution Engine (Traditional RAG, built from scratch)
+# HR Policy & Benefits Resolution Engine
 
 ## The real corporate problem
 
@@ -13,50 +13,53 @@ modes result:
 2. **Region-specific rules get confused** (e.g., applying a US policy answer to an EU employee),
    again causing compliance risk.
 
-This project builds a **traditional RAG (Retrieval-Augmented Generation) pipeline** that:
+This project builds a grounded RAG (Retrieval-Augmented Generation) pipeline that:
 
 - Ingests HR policy documents (with metadata: region, doc id, version, effective date).
 - Retrieves the most relevant, **most current**, region-correct policy chunks for a question.
-- Detects when **multiple conflicting policy versions** are retrieved (e.g., v1.0 vs v2.0 of the
-  same doc ID) and flags the answer for **human HR review** instead of silently guessing.
+- Detects when **multiple policy versions** are retrieved (e.g., v1.0 vs v2.0 of the same doc ID),
+  prefers the newest effective version, and exposes an older-version warning for auditability.
 - Produces **two deliverables** per question, not just a chat reply:
   - A **structured decision object**: `{answer, cited_sections, confidence, conflict_flag, next_action}`
     — suitable for auto-populating a case management / ticketing system.
   - A **drafted response document**: a ready-to-send, cited email reply to the employee.
 
-## Why "traditional" RAG (not agentic)
+## Architecture
 
-We deliberately build the classic linear pipeline so every step is transparent and debuggable:
+The application uses a controlled LangGraph workflow so every retrieval and HR-review decision
+is explicit and debuggable:
 
 ```mermaid
 flowchart LR
     A[Raw HR Policy Docs] --> B[Ingest & Parse]
     B --> C[Chunk with Metadata]
     C --> D[Embed Chunks]
-    D --> E[(Vector Index - numpy)]
+    D --> E[(FAISS Index)]
     F[Employee Question] --> G[Embed Question]
     G --> H[Retrieve Top-K Chunks]
     E --> H
-    H --> I[Conflict Detection]
+    H --> I[LangGraph Version Review]
     I --> J[Build Grounded Prompt]
-    J --> K[Local LLM via GitHub Models]
+    J --> K[Gemini API]
     K --> L[Structured Decision JSON]
     K --> M[Drafted Email Response]
 ```
 
-No agents, no tool-calling loops, no multi-hop reasoning — just: ingest → chunk → embed → store →
-retrieve → generate. This is the foundation every more advanced RAG system builds on.
+LangChain handles document loading, splitting, embeddings, and FAISS retrieval. LangGraph routes
+the evidence through latest-version selection, HR review when necessary, and grounded generation.
+This is a controlled workflow rather than an open-ended tool-calling agent.
 
-## Tech stack (all free — no local GPU or paid API keys required)
+## Tech stack
 
 | Concern              | Choice                          | Why |
 |-----------------------|----------------------------------|-----|
-| LLM (generation)      | [GitHub Models](https://github.com/marketplace/models) (`openai/gpt-4o-mini`) via OpenAI-compatible endpoint | Free tier, auth via your existing GitHub account (same one used for Copilot), reachable through corporate proxies that block other GenAI tools |
-| Embeddings            | `scikit-learn` TF-IDF vectorizer | Fully offline, no model download, works around corporate network blocks on Hugging Face |
-| Vector store          | Hand-rolled numpy brute-force cosine similarity (`vectorstore.py`) | No C-extension build tools required on Windows; teaches exactly how vector search works under the hood |
-| Doc parsing           | `pypdf`, `python-docx`          | Handle real-world PDF/Word policy docs |
+| LLM (generation)      | [Google Gemini](https://ai.google.dev/gemini-api/docs/openai) via its OpenAI-compatible endpoint | Use a Gemini API key with the existing OpenAI SDK |
+| Embeddings            | Hugging Face Sentence Transformers (`all-MiniLM-L6-v2`) | Semantic retrieval with normalized dense vectors; downloaded once and run locally |
+| Vector store          | FAISS through LangChain (`vectorstore.py`) | Fast local nearest-neighbor search with metadata payloads |
+| Doc parsing           | LangChain loaders (`PyPDFLoader`, `Docx2txtLoader`, `TextLoader`) | Consistent document ingestion across source formats |
+| Workflow              | LangGraph | Explicit retrieval, version selection, and HR-review routing |
 | Structured output     | `pydantic`                      | Validate/parse the LLM's JSON decision object |
-| Interface             | Python CLI scripts (`scripts/`) | Learn the pipeline before adding UI complexity |
+| Interface             | React + Vite + FastAPI + CLI | A dedicated browser app over the HTTP API |
 
 ## Project structure
 
@@ -65,17 +68,28 @@ rag-chatbot/
 ├── data/
 │   ├── raw/            # Source HR policy documents (.md/.pdf/.docx go here)
 │   ├── processed/      # Generated: cleaned + chunked text (JSON)
-│   └── vector_index/   # Generated: persisted embeddings.npy + metadata.json (gitignored)
-├── src/hr_rag/
+│   └── vector_index/   # Generated: persisted FAISS index (gitignored)
+├── backend/
+│   ├── __init__.py       # Backend package marker
+│   └── main.py           # FastAPI routes and static frontend serving
+├── src/hr_rag/           # Domain and application layer
 │   ├── config.py       # Central settings (paths, model names) from .env
-│   ├── ingest.py       # Load raw docs -> plain text + metadata
-│   ├── chunking.py     # Split text into overlapping chunks
-│   ├── embeddings.py   # TF-IDF vectorizer (fit/transform, fully offline)
-│   ├── vectorstore.py  # From-scratch numpy vector index (add/query)
+│   ├── ingest.py       # LangChain loaders -> plain text + metadata
+│   ├── chunking.py     # LangChain recursive text splitting
+│   ├── embeddings.py   # Hugging Face semantic embedding model
+│   ├── vectorstore.py  # LangChain FAISS index (add/query)
+│   ├── workflow.py     # LangGraph retrieval and HR-review workflow
 │   ├── retrieval.py    # Top-K retrieval + conflict detection logic
-│   ├── generation.py   # Prompt construction + GitHub Models call
+│   ├── generation.py   # Prompt construction + Gemini API call
 │   ├── schemas.py       # Pydantic models for the structured decision output
-│   └── pipeline.py     # Orchestrates ask(question) -> (decision, draft_email)
+│   ├── pipeline.py     # Orchestrates ask(question) -> (decision, draft_email)
+├── frontend/           # React/Vite browser application
+│   ├── src/
+│   │   ├── App.jsx      # Main React workflow and result views
+│   │   ├── main.jsx     # React entry point
+│   │   └── styles.css   # Application styling
+│   ├── package.json
+│   └── vite.config.js   # Dev proxy: /api -> FastAPI
 ├── scripts/
 │   ├── 01_ingest.py        # Step: parse + chunk data/raw -> data/processed
 │   ├── 02_build_index.py   # Step: embed chunks -> populate vector index
@@ -93,22 +107,24 @@ rag-chatbot/
       intentionally superseded policy version, to exercise conflict detection later).
 - [x] **Step 2** — Ingestion: parse `.md/.pdf/.docx` into plain text + metadata.
 - [x] **Step 3** — Chunking strategy: fixed-size + overlap, why it matters, chunk metadata.
-- [x] **Step 4** — Embeddings: turn chunks into vectors, store in a from-scratch numpy index.
-- [x] **Step 5** — Retrieval: similarity search, top-K, metadata filtering by region.
-- [x] **Step 6** — Conflict detection: same `doc_id`, different `version`/`effective_date` both
-      retrieved -> flag instead of answering.
-- [ ] **Step 7** — Generation: grounded prompt design, calling GitHub Models, forcing
+- [x] **Step 4** — Semantic embeddings: Hugging Face sentence-transformers with a FAISS index.
+- [x] **Step 5** — LangChain FAISS retrieval: similarity search, top-K, metadata filtering by region.
+- [x] **Step 6** — Version handling: same `doc_id`, different `version`/`effective_date` both
+  retrieved -> use the newest effective version and show an audit warning.
+- [x] **Step 7** — Generation: grounded prompt design, calling Gemini, forcing
       structured JSON output validated by Pydantic, plus a drafted email.
-- [ ] **Step 8** — Wire it together into `scripts/03_ask.py`, an interactive CLI.
+- [x] **Step 8** — LangGraph workflow, FastAPI endpoints, React frontend, and interactive CLI.
 - [ ] **Step 9** — Evaluation: a small test set of Q&A pairs with expected citations, precision/
       recall on retrieval, manual grading of answer groundedness.
-- [ ] **Step 10 (stretch)** — Streamlit UI, HR-reviewer feedback loop, re-ranking.
+- [x] **Step 10** — FastAPI backend and React/Vite browser UI over the FAISS index.
+- [x] **Step 11** — LangChain ingestion/retrieval and LangGraph HR-review workflow.
+- [ ] **Step 12** — Evaluation set, hybrid BM25 retrieval, reranking, and persistent HR feedback.
 
 ## Sample data (already created)
 
 `data/raw/` contains 6 realistic HR documents, including a deliberate conflict:
 
-- `parental_leave_policy_us_2021.md` (v1.0) **and**
+  - `parental_leave_policy_us_2021.md` (v1.0, archived) **and**
   `parental_leave_policy_us_2023_amendment.md` (v2.0, supersedes v1.0) — same `doc_id`
   `HR-POL-US-014`, different terms. This is the conflict-detection test case.
 - `parental_leave_policy_eu_2022.md` — different region, different rules (not a conflict, a
@@ -119,13 +135,47 @@ rag-chatbot/
 ## Setup
 
 ```powershell
-cd rag-chatbot
+cd C:\hr_assist_po\rag-chatbot
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-copy .env.example .env
+pip install -e .
+Copy-Item .env.example .env
 ```
 
-Requires a free GitHub personal access token with `models: read` permission, created at
-[github.com/settings/personal-access-tokens](https://github.com/settings/personal-access-tokens),
-set as `GITHUB_MODELS_TOKEN` in your `.env` file.
+Requires a Gemini API key created at
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey), set as
+`GEMINI_API_KEY` in your `.env` file.
+
+## Run the backend and frontend
+
+Build the local vector index once after ingestion:
+
+```powershell
+python scripts/01_ingest.py
+python scripts/02_build_index.py
+```
+
+The first index build downloads the configured Hugging Face embedding model. The generated
+FAISS files are written to `data/vector_index/policy_faiss/` and are ignored by Git.
+
+Start the FastAPI backend from the project root:
+
+```powershell
+python -m uvicorn backend.main:app --reload
+```
+
+In a second terminal, run the React development frontend:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open <http://localhost:5173>. Vite proxies `/api` requests to FastAPI on port 8000.
+For a single-process production-style run, build React first with `npm run build`, then
+start FastAPI and open <http://127.0.0.1:8000>; FastAPI serves `frontend/dist`.
+Swagger remains at <http://127.0.0.1:8000/docs>. The local vector database is a
+LangChain-managed FAISS index in `data/vector_index/policy_faiss/`, and the workflow
+is orchestrated by LangGraph in `src/hr_rag/workflow.py`.

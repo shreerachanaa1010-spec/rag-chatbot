@@ -70,3 +70,4 @@ class PipelineResult(BaseModel):
     decision: DecisionOutput
     draft_email: str
     retrieved: list[RetrievedChunk]
+    older_version_warning: str | None = None

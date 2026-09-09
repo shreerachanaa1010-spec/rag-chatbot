@@ -21,8 +21,11 @@ import json
 import re
 from pathlib import Path
 
-from pypdf import PdfReader
-from docx import Document as DocxDocument
+from langchain_community.document_loaders import (
+    Docx2txtLoader,
+    PyPDFLoader,
+    TextLoader,
+)
 
 from hr_rag.config import PROCESSED_DATA_DIR, RAW_DATA_DIR
 from hr_rag.schemas import PolicyDocument
@@ -50,7 +53,7 @@ def _normalize_region(raw_region: str) -> str:
 
 
 def _parse_markdown(path: Path) -> PolicyDocument:
-    raw = path.read_text(encoding="utf-8")
+    raw = TextLoader(str(path), encoding="utf-8").load()[0].page_content
 
     fields = {m.group("key").strip(): m.group("value").strip() for m in _METADATA_LINE.finditer(raw)}
 
@@ -76,8 +79,8 @@ def _parse_markdown(path: Path) -> PolicyDocument:
 
 
 def _parse_pdf(path: Path) -> PolicyDocument:
-    reader = PdfReader(str(path))
-    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    pages = PyPDFLoader(str(path)).load()
+    text = "\n".join(page.page_content for page in pages)
     return PolicyDocument(
         doc_id=path.stem,
         version="v1.0",
@@ -90,8 +93,7 @@ def _parse_pdf(path: Path) -> PolicyDocument:
 
 
 def _parse_docx(path: Path) -> PolicyDocument:
-    doc = DocxDocument(str(path))
-    text = "\n".join(p.text for p in doc.paragraphs)
+    text = "\n".join(page.page_content for page in Docx2txtLoader(str(path)).load())
     return PolicyDocument(
         doc_id=path.stem,
         version="v1.0",

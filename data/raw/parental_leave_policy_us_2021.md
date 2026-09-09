@@ -2,6 +2,7 @@
 **Region:** United States
 **Effective Date:** January 1, 2021
 **Document ID:** HR-POL-US-014 (v1.0)
+**Status:** Archived - superseded by HR-POL-US-014 (v2.0), effective March 1, 2023
 
 ## Overview
 This policy applies to all full-time employees based in the United States.

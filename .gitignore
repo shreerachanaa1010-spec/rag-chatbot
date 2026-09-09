@@ -4,6 +4,8 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+frontend/node_modules/
+frontend/dist/
 
 # Env secrets
 .env

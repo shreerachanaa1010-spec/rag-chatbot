@@ -24,38 +24,20 @@ splitters) build on this same idea.
 """
 from __future__ import annotations
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from hr_rag.config import CHUNK_OVERLAP, CHUNK_SIZE
 from hr_rag.schemas import Chunk, PolicyDocument
 
 
-def _split_paragraphs(text: str) -> list[str]:
-    paragraphs = [p.strip() for p in text.split("\n\n")]
-    return [p for p in paragraphs if p]
-
-
 def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Pack paragraphs into ~chunk_size character windows with character overlap."""
-    paragraphs = _split_paragraphs(text)
-    chunks: list[str] = []
-    current = ""
-
-    for paragraph in paragraphs:
-        candidate = f"{current}\n\n{paragraph}" if current else paragraph
-
-        if len(candidate) <= chunk_size or not current:
-            current = candidate
-            continue
-
-        # Current window is full: close it out and start the next one,
-        # carrying the tail of the previous chunk forward as overlap.
-        chunks.append(current)
-        tail = current[-overlap:] if overlap else ""
-        current = f"{tail}\n\n{paragraph}".strip()
-
-    if current:
-        chunks.append(current)
-
-    return chunks
+    """Split policy text with LangChain's structure-aware recursive splitter."""
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=overlap,
+        separators=["\n## ", "\n### ", "\n\n", "\n", ". ", " ", ""],
+    )
+    return splitter.split_text(text)
 
 
 def chunk_document(document: PolicyDocument) -> list[Chunk]:
