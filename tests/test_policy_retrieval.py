@@ -1,7 +1,19 @@
 from __future__ import annotations
 
+from hr_rag.chunking import chunk_text
 from hr_rag.retrieval import current_version_chunks, older_version_warning, retrieve
 from hr_rag.schemas import Chunk, RetrievedChunk
+
+
+def test_chunking_keeps_markdown_sections_together() -> None:
+    text = "# Policy\n\n## Leave Entitlement\nEmployees receive leave.\n\n## Contact\ncontact@company.com"
+
+    chunks = chunk_text(text, chunk_size=120, overlap=20)
+
+    assert len(chunks) == 3
+    assert "## Leave Entitlement" in chunks[1]
+    assert "## Contact" in chunks[2]
+    assert "contact@company.com" not in chunks[1]
 
 
 def test_latest_effective_version_is_selected() -> None:

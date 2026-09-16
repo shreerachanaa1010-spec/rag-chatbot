@@ -9,6 +9,7 @@ our DecisionOutput schema (see schemas.py) without brittle text parsing.
 from __future__ import annotations
 
 import json
+import re
 
 from openai import OpenAI
 
@@ -35,9 +36,11 @@ matching exactly this shape:
   "confidence": "high | medium | low",
   "conflict_flag": true | false,
   "next_action": "send_to_employee | escalate_to_hr_review",
-  "draft_email": "a ready-to-send, professional email to the employee that \
-answers their question with inline citations; if conflict_flag is true, this \
-should instead briefly explain the case is being escalated to HR review"
+    "draft_email": "a ready-to-send, professional email to the employee. Do not \
+mention policy excerpts, source documents, retrieved context, tools, models, \
+search, prompts, or this system. Do not use Markdown syntax such as **, ##, or \
+backticks. If conflict_flag is true, briefly explain that the case is being \
+escalated to HR review without mentioning the internal evidence or process."
 }
 """
 
@@ -51,6 +54,15 @@ def _format_context(chunks: list[RetrievedChunk]) -> str:
             f"effective={c.effective_date} | source={c.source_file}]\n{c.text}"
         )
     return "\n\n---\n\n".join(blocks)
+
+
+def _clean_draft_email(email: str) -> str:
+    """Remove model formatting that should not appear in a ready-to-send email."""
+    email = re.sub(r"```(?:text|markdown)?\s*|```", "", email, flags=re.IGNORECASE)
+    email = re.sub(r"\*{1,3}|_{1,3}|`", "", email)
+    email = re.sub(r"^\s{0,3}#{1,6}\s*", "", email, flags=re.MULTILINE)
+    email = re.sub(r"^\s*[-*+]\s+", "", email, flags=re.MULTILINE)
+    return email.strip()
 
 
 def generate_decision(question: str, retrieved: list[RetrievedChunk]) -> dict:
@@ -71,4 +83,9 @@ def generate_decision(question: str, retrieved: list[RetrievedChunk]) -> dict:
         response_format={"type": "json_object"},
         temperature=0.1,
     )
-    return json.loads(response.choices[0].message.content)
+    content = response.choices[0].message.content
+    if not content:
+        raise RuntimeError("Gemini returned an empty response")
+    result = json.loads(content)
+    result["draft_email"] = _clean_draft_email(result.get("draft_email", ""))
+    return result

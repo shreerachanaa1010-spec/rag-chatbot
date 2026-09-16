@@ -1,0 +1,5 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}\\rag-chatbot\\.venv\\Scripts\\python.exe",
+  "python.analysis.extraPaths": ["${workspaceFolder}/rag-chatbot/src"],
+  "python.analysis.typeCheckingMode": "basic"
+}

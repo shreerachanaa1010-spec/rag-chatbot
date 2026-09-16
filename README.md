@@ -49,6 +49,20 @@ LangChain handles document loading, splitting, embeddings, and FAISS retrieval. 
 the evidence through latest-version selection, HR review when necessary, and grounded generation.
 This is a controlled workflow rather than an open-ended tool-calling agent.
 
+### Workflow and agents
+
+The application has **one LangGraph workflow** with **five deterministic workflow nodes**. These
+nodes are workflow steps, not five separate autonomous agents:
+
+1. `retrieve` - retrieves relevant policy chunks using semantic search and reranking.
+2. `select_latest` - selects the newest effective policy version and records older-version warnings.
+3. `review_gate` - checks whether evidence is missing or policy versions conflict.
+4. `hr_review` - escalates uncertain or conflicting cases to HR.
+5. `generate` - produces the grounded decision and draft employee email.
+
+The workflow routes each question from retrieval through version review, then either to HR review
+or to grounded answer generation. It is implemented in `src/hr_rag/workflow.py`.
+
 ## Tech stack
 
 | Concern              | Choice                          | Why |

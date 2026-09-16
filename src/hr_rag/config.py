@@ -44,6 +44,14 @@ RERANKER_MODEL = os.getenv(
 	"cross-encoder/ms-marco-MiniLM-L-6-v2",
 )
 
+# --- Email ---------------------------------------------------------------
+SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SMTP_FROM = os.getenv("SMTP_FROM", SMTP_USERNAME)
+HR_EMAIL_TO = os.getenv("HR_EMAIL_TO", "")
+
 # --- Chunking --------------------------------------------------------------
 # Measured in characters. ~800 chars is roughly 150-200 tokens, small enough
 # to keep retrieval precise but large enough to keep a policy clause intact.

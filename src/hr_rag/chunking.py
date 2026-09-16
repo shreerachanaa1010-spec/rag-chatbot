@@ -24,6 +24,8 @@ splitters) build on this same idea.
 """
 from __future__ import annotations
 
+import re
+
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from hr_rag.config import CHUNK_OVERLAP, CHUNK_SIZE
@@ -31,13 +33,32 @@ from hr_rag.schemas import Chunk, PolicyDocument
 
 
 def chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
-    """Split policy text with LangChain's structure-aware recursive splitter."""
+    """Split policy text into heading-aware, overlapping retrieval chunks."""
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
         chunk_overlap=overlap,
         separators=["\n## ", "\n### ", "\n\n", "\n", ". ", " ", ""],
     )
-    return splitter.split_text(text)
+    sections = re.split(r"(?=^##\s+)", text, flags=re.MULTILINE)
+    chunks: list[str] = []
+
+    for section in sections:
+        section = section.strip()
+        if not section:
+            continue
+
+        if len(section) <= chunk_size:
+            chunks.append(section)
+            continue
+
+        heading, separator, body = section.partition("\n")
+        section_chunks = splitter.split_text(body if separator else section)
+        chunks.extend(
+            f"{heading}\n{chunk}" if separator else chunk
+            for chunk in section_chunks
+        )
+
+    return chunks
 
 
 def chunk_document(document: PolicyDocument) -> list[Chunk]:
