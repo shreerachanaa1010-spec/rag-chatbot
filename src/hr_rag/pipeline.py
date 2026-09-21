@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 from hr_rag.schemas import DecisionOutput, PipelineResult
+from hr_rag.observability import observe_operation
 from hr_rag.workflow import workflow
 
 
-def ask(question: str, region: str | None = None) -> PipelineResult:
-    state = workflow.invoke({"question": question, "region": region})
+def ask(question: str, region: str | None = None, history: list[dict] | None = None) -> PipelineResult:
+    with observe_operation("pipeline.ask", region=region or "unspecified"):
+        state = workflow.invoke({"question": question, "region": region, "history": history or []})
     raw = state["raw"]
 
     decision = DecisionOutput(
@@ -23,4 +25,5 @@ def ask(question: str, region: str | None = None) -> PipelineResult:
         draft_email=raw.get("draft_email", ""),
         retrieved=state.get("retrieved", []),
         older_version_warning=state.get("older_version_warning"),
+        search_criteria=state.get("criteria"),
     )

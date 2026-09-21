@@ -21,6 +21,10 @@ class PolicyDocument(BaseModel):
     title: str
     source_file: str  # filename this was parsed from, for traceability
     text: str  # full cleaned plain-text body
+    policy_area: str = "general"
+    employee_types: list[str] = Field(default_factory=lambda: ["all"])
+    document_status: Literal["active", "archived", "unknown"] = "unknown"
+    supersedes_version: str | None = None
 
 
 class Chunk(BaseModel):
@@ -35,6 +39,10 @@ class Chunk(BaseModel):
     source_file: str
     chunk_index: int
     text: str
+    policy_area: str = "general"
+    employee_types: list[str] = Field(default_factory=lambda: ["all"])
+    document_status: Literal["active", "archived", "unknown"] = "unknown"
+    supersedes_version: str | None = None
 
 
 class RetrievedChunk(BaseModel):
@@ -42,6 +50,19 @@ class RetrievedChunk(BaseModel):
 
     chunk: Chunk
     distance: float  # lower = more similar (Chroma uses L2/cosine distance)
+    semantic_rank: int | None = None
+    keyword_rank: int | None = None
+    rrf_score: float | None = None
+
+
+class SearchCriteria(BaseModel):
+    """Deterministic search intent extracted before retrieval."""
+
+    policy_area: str = "general"
+    region: str | None = None
+    employee_type: str | None = None
+    intent: Literal["eligibility", "amount", "deadline", "process", "exception", "definition", "comparison", "general"] = "general"
+    rewritten_query: str
 
 
 class DecisionOutput(BaseModel):
@@ -71,3 +92,4 @@ class PipelineResult(BaseModel):
     draft_email: str
     retrieved: list[RetrievedChunk]
     older_version_warning: str | None = None
+    search_criteria: SearchCriteria | None = None

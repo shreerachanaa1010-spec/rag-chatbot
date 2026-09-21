@@ -6,13 +6,16 @@ from typing import TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from hr_rag.generation import generate_decision
-from hr_rag.retrieval import current_version_chunks, older_version_warning, retrieve
+from hr_rag.query_analysis import analyze_query
+from hr_rag.retrieval import current_version_chunks, evidence_sufficiency, older_version_warning, retrieve
 from hr_rag.schemas import RetrievedChunk
 
 
 class WorkflowState(TypedDict, total=False):
     question: str
     region: str | None
+    history: list[dict]
+    criteria: object
     retrieved: list[RetrievedChunk]
     current_chunks: list[RetrievedChunk]
     older_version_warning: str | None
@@ -21,7 +24,11 @@ class WorkflowState(TypedDict, total=False):
 
 
 def retrieve_node(state: WorkflowState) -> WorkflowState:
-    return {"retrieved": retrieve(state["question"], region=state.get("region"))}
+    criteria = analyze_query(state["question"], region=state.get("region"), history=state.get("history"))
+    return {
+        "criteria": criteria,
+        "retrieved": retrieve(state["question"], region=state.get("region"), history=state.get("history")),
+    }
 
 
 def select_latest_node(state: WorkflowState) -> WorkflowState:
@@ -36,6 +43,7 @@ def select_latest_node(state: WorkflowState) -> WorkflowState:
 def review_gate_node(state: WorkflowState) -> WorkflowState:
     retrieved = state.get("retrieved", [])
     current_chunks = state.get("current_chunks", [])
+    criteria = state.get("criteria")
     doc_versions: dict[str, set[str]] = {}
     for item in retrieved:
         doc_versions.setdefault(item.chunk.doc_id, set()).add(item.chunk.version)
@@ -45,7 +53,8 @@ def review_gate_node(state: WorkflowState) -> WorkflowState:
         and not any("supersedes" in item.chunk.text.lower() for item in current_chunks)
         for versions in doc_versions.values()
     )
-    return {"review_required": not current_chunks or unresolved_conflict}
+    sufficient, _ = evidence_sufficiency(retrieved, criteria) if criteria else (bool(current_chunks), "")
+    return {"review_required": not current_chunks or unresolved_conflict or not sufficient}
 
 
 def route_after_review(state: WorkflowState) -> str:

@@ -74,7 +74,13 @@ def _load_index(index_dir: Path = VECTOR_INDEX_DIR) -> FAISS:
     )
 
 
-def query(question: str, top_k: int = TOP_K, region: str | None = None) -> list[RetrievedChunk]:
+def query(
+    question: str,
+    top_k: int = TOP_K,
+    region: str | None = None,
+    policy_area: str | None = None,
+    employee_type: str | None = None,
+) -> list[RetrievedChunk]:
     """
     Embed the question and return the top_k most similar chunks.
 
@@ -85,46 +91,56 @@ def query(question: str, top_k: int = TOP_K, region: str | None = None) -> list[
     metadata_filter = {"region": {"$in": [region, "Global"]}} if region else None
     matches = store.similarity_search_with_score(
         question,
-        k=top_k,
+        k=max(top_k * 3, 10),
         filter=metadata_filter,
         fetch_k=max(top_k * 4, 20),
     )
     documents = [
         document
         for document in store.docstore._dict.values()
-        if not region or document.metadata.get("region") in (region, "Global")
+        if (not region or document.metadata.get("region") in (region, "Global"))
+        and (not policy_area or policy_area == "general" or document.metadata.get("policy_area") == policy_area)
+        and (not employee_type or employee_type in document.metadata.get("employee_types", ["all"]) or "all" in document.metadata.get("employee_types", ["all"]))
     ]
+    if policy_area and policy_area != "general" and not documents:
+        documents = [
+            document
+            for document in store.docstore._dict.values()
+            if (not region or document.metadata.get("region") in (region, "Global"))
+            and (not employee_type or employee_type in document.metadata.get("employee_types", ["all"]) or "all" in document.metadata.get("employee_types", ["all"]))
+        ]
     if not documents:
         return []
 
+    matches = [
+        (document, float(distance))
+        for document, distance in matches
+        if document in documents and float(distance) <= MAX_DISTANCE
+    ]
     tokenize = lambda text: text.lower().split()
     bm25 = BM25Okapi([tokenize(document.page_content) for document in documents])
     keyword_scores = bm25.get_scores(tokenize(question))
-    max_keyword_score = max(keyword_scores, default=0.0)
-    keyword_by_id = {
-        document.metadata["chunk_id"]: (
-            float(keyword_scores[index] / max_keyword_score)
-            if max_keyword_score > 0
-            else 0.0
-        )
-        for index, document in enumerate(documents)
+    semantic_rank = {document.metadata["chunk_id"]: rank for rank, (document, _) in enumerate(matches, start=1)}
+    keyword_order = sorted(range(len(documents)), key=lambda index: float(keyword_scores[index]), reverse=True)
+    keyword_rank = {
+        documents[index].metadata["chunk_id"]: rank
+        for rank, index in enumerate(keyword_order[: max(top_k * 3, 10)], start=1)
     }
-
+    documents_by_id = {document.metadata["chunk_id"]: document for document in documents}
+    candidate_ids = set(semantic_rank) | set(keyword_rank)
     candidates = []
-    for document, distance in matches:
-        distance = float(distance)
-        if distance > MAX_DISTANCE:
-            continue
-        semantic_score = 1.0 / (1.0 + distance)
-        keyword_score = keyword_by_id.get(document.metadata["chunk_id"], 0.0)
-        hybrid_score = 0.7 * semantic_score + 0.3 * keyword_score
-        candidates.append((hybrid_score, document))
+    for chunk_id in candidate_ids:
+        sem_rank = semantic_rank.get(chunk_id)
+        key_rank = keyword_rank.get(chunk_id)
+        rrf_score = (1 / (60 + sem_rank) if sem_rank else 0) + (1 / (60 + key_rank) if key_rank else 0)
+        distance = 1.0 / (1.0 + rrf_score)
+        candidates.append((rrf_score, documents_by_id[chunk_id], sem_rank, key_rank, distance))
 
     candidates.sort(key=lambda item: item[0], reverse=True)
     return [
         RetrievedChunk(
-            chunk=Chunk(**document.metadata),
-            distance=float(1.0 - score),
+            chunk=Chunk(**document.metadata), distance=distance,
+            semantic_rank=sem_rank, keyword_rank=key_rank, rrf_score=rrf_score,
         )
-        for score, document in candidates[:top_k]
+        for rrf_score, document, sem_rank, key_rank, distance in candidates[:top_k]
     ]

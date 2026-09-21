@@ -20,7 +20,8 @@ from functools import lru_cache
 from sentence_transformers import CrossEncoder
 
 from hr_rag.config import RERANKER_MODEL, TOP_K
-from hr_rag.schemas import RetrievedChunk
+from hr_rag.query_analysis import analyze_query
+from hr_rag.schemas import RetrievedChunk, SearchCriteria
 from hr_rag.vectorstore import query as vector_query
 
 
@@ -37,11 +38,23 @@ def _rerank(question: str, candidates: list[RetrievedChunk], top_k: int) -> list
     return [item for _, item in ranked[:top_k]]
 
 
-def retrieve(question: str, region: str | None = None, top_k: int = TOP_K) -> list[RetrievedChunk]:
+def retrieve(
+    question: str,
+    region: str | None = None,
+    top_k: int = TOP_K,
+    history: list[dict] | None = None,
+) -> list[RetrievedChunk]:
+    criteria = analyze_query(question, region=region, history=history)
     retrieved = _rerank(
-        question,
-        vector_query(question, top_k=max(top_k * 3, 10), region=region),
-        top_k,
+        criteria.rewritten_query,
+        vector_query(
+            criteria.rewritten_query,
+            top_k=max(top_k * 3, 10),
+            region=criteria.region,
+            policy_area=criteria.policy_area,
+            employee_type=criteria.employee_type,
+        ),
+        max(top_k * 2, 10),
     )
     latest_dates: dict[str, date] = {}
     for item in retrieved:
@@ -51,7 +64,7 @@ def retrieve(question: str, region: str | None = None, top_k: int = TOP_K) -> li
         )
 
     # Keep older versions visible for auditability, but rank the active version first.
-    return sorted(
+    ranked = sorted(
         retrieved,
         key=lambda item: (
             _parse_effective_date(item.chunk.effective_date)
@@ -59,6 +72,29 @@ def retrieve(question: str, region: str | None = None, top_k: int = TOP_K) -> li
             item.distance,
         ),
     )
+    selected: list[RetrievedChunk] = []
+    section_counts: dict[tuple[str, str], int] = defaultdict(int)
+    for item in ranked:
+        section_key = (item.chunk.doc_id, item.chunk.title)
+        if section_counts[section_key] >= 2:
+            continue
+        selected.append(item)
+        section_counts[section_key] += 1
+        if len(selected) >= top_k:
+            break
+    return selected
+
+
+def evidence_sufficiency(retrieved: list[RetrievedChunk], criteria: SearchCriteria) -> tuple[bool, str]:
+    """Return whether retrieval is strong enough to permit generation."""
+    if not retrieved:
+        return False, "No policy evidence matched the question."
+    top = retrieved[0]
+    if top.rrf_score is not None and top.rrf_score < 0.025:
+        return False, "Retrieved evidence did not meet the relevance threshold."
+    if criteria.policy_area != "general" and not any(item.chunk.policy_area == criteria.policy_area for item in retrieved):
+        return False, "Retrieved evidence did not match the requested policy area."
+    return True, "Evidence passed retrieval thresholds."
 
 
 def _parse_effective_date(value: str) -> date:

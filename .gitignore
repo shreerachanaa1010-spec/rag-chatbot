@@ -12,6 +12,8 @@ frontend/dist/
 
 # Vector index persisted data (regenerated from data/raw via scripts)
 data/vector_index/
+data/review_cases.sqlite3
+data/review/
 
 # OS
 .DS_Store

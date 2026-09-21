@@ -103,7 +103,7 @@ function Result({ data }) {
 
 export default function App() {
   const [question, setQuestion] = useState('');
-  const [recentQuestions, setRecentQuestions] = useState([]);
+  const [chatHistory, setChatHistory] = useState([]);
   const [region, setRegion] = useState('');
   const [health, setHealth] = useState(null);
   const [result, setResult] = useState(null);
@@ -115,6 +115,10 @@ export default function App() {
       .then((response) => response.json())
       .then(setHealth)
       .catch(() => setHealth({ index_ready: false, offline: true }));
+    fetch('/api/chat-history')
+      .then((response) => response.json())
+      .then((data) => setChatHistory(data.chats || []))
+      .catch(() => setChatHistory([]));
   }, []);
 
   async function submitQuestion(event) {
@@ -139,7 +143,10 @@ export default function App() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || 'The policy desk could not answer this question.');
       setResult(data);
-      setRecentQuestions((previous) => [trimmedQuestion, ...previous.filter((item) => item !== trimmedQuestion)].slice(0, 4));
+      setChatHistory((previous) => [
+        { ...data, created_at: new Date().toISOString() },
+        ...previous.filter((item) => item.question !== trimmedQuestion),
+      ].slice(0, 10));
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -178,12 +185,15 @@ export default function App() {
             <button type="submit" disabled={loading}><span>{loading ? 'Searching...' : 'Ask policy desk'}</span><strong>↗</strong></button>
           </div>
           <p className="form-note"><span className="note-dot" /> 📑 Review follows every search. Conflicting versions are escalated automatically.</p>
-          {recentQuestions.length > 0 && (
+          {chatHistory.length > 0 && (
             <div className="recent-questions">
-              <div className="recent-heading"><span>Recent Questions</span><small>THIS SESSION</small></div>
-              {recentQuestions.map((item) => (
-                <button type="button" className="recent-question" key={item} onClick={() => setQuestion(item)}>
-                  <span>{item}</span><strong>↗</strong>
+              <div className="recent-heading"><span>Chat history</span><small>SAVED</small></div>
+              {chatHistory.slice(0, 4).map((item) => (
+                <button type="button" className="recent-question" key={item.chat_id || item.question} onClick={() => {
+                  setQuestion(item.question);
+                  setResult(item);
+                }}>
+                  <span>{item.question}</span><strong>↗</strong>
                 </button>
               ))}
             </div>

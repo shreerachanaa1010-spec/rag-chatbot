@@ -25,6 +25,7 @@ os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 RAW_DATA_DIR = ROOT_DIR / "data" / "raw"
 PROCESSED_DATA_DIR = ROOT_DIR / "data" / "processed"
 VECTOR_INDEX_DIR = ROOT_DIR / os.getenv("VECTOR_INDEX_DIR", "data/vector_index")
+REVIEW_DB_PATH = ROOT_DIR / os.getenv("REVIEW_DB_PATH", "data/review_cases.sqlite3")
 
 # --- Models --------------------------------------------------------------
 # Gemini exposes an OpenAI-compatible endpoint, so the existing OpenAI SDK
@@ -61,3 +62,14 @@ CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "120"))
 # --- Retrieval --------------------------------------------------------------
 TOP_K = int(os.getenv("TOP_K", "5"))
 MAX_DISTANCE = float(os.getenv("MAX_DISTANCE", "1.6"))
+
+# --- Security and operations --------------------------------------------
+API_KEY = os.getenv("HR_API_KEY", "")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+ALLOWED_ORIGINS = [
+	origin.strip()
+	for origin in os.getenv(
+		"ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+	).split(",")
+	if origin.strip()
+]

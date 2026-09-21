@@ -1,0 +1,23 @@
+[
+  {
+    "question": "How much parental leave am I eligible for in the US?",
+    "region": "US",
+    "expected_doc_ids": ["HR-POL-US-014"],
+    "expected_versions": ["v2.0"]
+  },
+  {
+    "question": "How are salary increases and bonuses decided?",
+    "region": "US",
+    "expected_doc_ids": ["HR-POL-US-040"]
+  },
+  {
+    "question": "How does the annual performance review work?",
+    "region": "US",
+    "expected_doc_ids": ["HR-POL-GLOBAL-041"]
+  },
+  {
+    "question": "What is the PTO carryover rule?",
+    "region": "US",
+    "expected_doc_ids": ["HR-POL-US-020"]
+  }
+]

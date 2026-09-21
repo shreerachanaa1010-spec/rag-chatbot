@@ -1,0 +1,14 @@
+services:
+  hr-policy-desk:
+    build: .
+    env_file: .env
+    environment:
+      REVIEW_DB_PATH: data/review/review_cases.sqlite3
+    ports:
+      - "8000:8000"
+    volumes:
+      - review-data:/app/data/review
+    restart: unless-stopped
+
+volumes:
+  review-data:

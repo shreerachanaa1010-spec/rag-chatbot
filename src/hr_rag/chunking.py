@@ -78,6 +78,10 @@ def chunk_document(document: PolicyDocument) -> list[Chunk]:
                 source_file=document.source_file,
                 chunk_index=i,
                 text=text,
+                policy_area=document.policy_area,
+                employee_types=document.employee_types,
+                document_status=document.document_status,
+                supersedes_version=document.supersedes_version,
             )
         )
 

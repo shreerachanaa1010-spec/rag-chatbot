@@ -11,10 +11,9 @@ from __future__ import annotations
 import json
 import re
 
-from openai import OpenAI
-
 from hr_rag.config import GEMINI_API_KEY, GEMINI_BASE_URL, GEMINI_MODEL
 from hr_rag.schemas import RetrievedChunk
+from hr_rag.validation import validate_citations
 
 SYSTEM_PROMPT = """You are an HR policy assistant answering employee questions using ONLY the \
 policy excerpts provided in the user message. Never use outside knowledge.
@@ -67,6 +66,8 @@ def _clean_draft_email(email: str) -> str:
 
 def generate_decision(question: str, retrieved: list[RetrievedChunk]) -> dict:
     """Call the LLM and return the parsed raw JSON dict (pre-validation)."""
+    from openai import OpenAI
+
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY is not configured")
 
@@ -88,4 +89,4 @@ def generate_decision(question: str, retrieved: list[RetrievedChunk]) -> dict:
         raise RuntimeError("Gemini returned an empty response")
     result = json.loads(content)
     result["draft_email"] = _clean_draft_email(result.get("draft_email", ""))
-    return result
+    return validate_citations(result, retrieved)
