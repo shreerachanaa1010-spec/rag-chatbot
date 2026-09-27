@@ -65,6 +65,13 @@ def _normalize_region(raw_region: str) -> str:
 
 def _infer_policy_area(text: str) -> str:
     lowered = text.lower()
+    title = lowered.split("\n", 1)[0]
+    title_area = next(
+        (area for area, terms in _POLICY_AREAS.items() if any(term in title for term in terms)),
+        None,
+    )
+    if title_area:
+        return title_area
     return next((area for area, terms in _POLICY_AREAS.items() if any(term in lowered for term in terms)), "general")
 
 

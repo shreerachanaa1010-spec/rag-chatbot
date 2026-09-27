@@ -73,9 +73,9 @@ def retrieve(
         ),
     )
     selected: list[RetrievedChunk] = []
-    section_counts: dict[tuple[str, str], int] = defaultdict(int)
+    section_counts: dict[tuple[str, int], int] = defaultdict(int)
     for item in ranked:
-        section_key = (item.chunk.doc_id, item.chunk.title)
+        section_key = (item.chunk.doc_id, item.chunk.chunk_index)
         if section_counts[section_key] >= 2:
             continue
         selected.append(item)
